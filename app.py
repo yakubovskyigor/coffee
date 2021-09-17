@@ -9,6 +9,7 @@ app.secret_key = "testing"
 client = pymongo.MongoClient(host="localhost", port=27017)
 coffee = client.coffee
 users = coffee.users
+orders = coffee.orders
 
 
 @app.route('/')
@@ -21,10 +22,20 @@ def order():
     return "Заказы"
 
 
-@app.route('/add')
+@app.route('/add', methods=['GET', 'POST'])
 def add():
-    users.insert_one({"name": "Mark"})
-    return jsonify("name")
+    photo = request.form["photo"]
+    first_name = request.form["first_name"]
+    last_name = request.form["last_name"]
+    password = request.form["password"]
+    phone_number = request.form["phone_number"]
+    email = request.form["email"]
+    date_of_birth = request.form["date_of_birth"]
+    gender = request.form["gender"]
+    user_info = dict(first_name=first_name, last_name=last_name, password=password, phone_number=phone_number,
+                     email=email, photo=photo, date_of_birth=date_of_birth, gender=gender)
+    users.insert_one(user_info)
+    return jsonify(message="User added successfully")
 
 
 @app.route('/test', methods=['GET', 'POST'])
