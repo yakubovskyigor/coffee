@@ -28,18 +28,18 @@ class Order(User):
 
 class OrderItem(Order):
     type_of_coffee = "Вид кофе"
-    price = "Цена"
-    quantity = "Количество"
+    price = float
+    quantity = int
     additions = dict
 
-    def __init__(self, type_of_coffee, price, quantity, additions):
+    def __init__(self, type_of_coffee, quantity, additions, price):
         self.type_of_coffee = type_of_coffee
         self.price = price
         self.quantity = quantity
         self.additions = additions
 
-    def get_cost(self):
-        return self.price * self.quantity
+    def get_cost(self, price, quantity):
+        return price * quantity
 
 
 
@@ -47,4 +47,4 @@ class OrderItem(Order):
 u = User
 o = Order
 oi = OrderItem
-print(o.phone_number)
+print(oi.get_cost)

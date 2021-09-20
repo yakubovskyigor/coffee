@@ -3,7 +3,6 @@ import pymongo
 import bcrypt
 
 
-
 app = Flask(__name__)
 app.secret_key = "testing"
 client = pymongo.MongoClient(host="localhost", port=27017)
@@ -24,14 +23,14 @@ def order():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add():
-    photo = request.form["photo"]
-    first_name = request.form["first_name"]
-    last_name = request.form["last_name"]
-    password = request.form["password"]
-    phone_number = request.form["phone_number"]
-    email = request.form["email"]
-    date_of_birth = request.form["date_of_birth"]
-    gender = request.form["gender"]
+    photo = request.json["photo"]
+    first_name = request.json["first_name"]
+    last_name = request.json["last_name"]
+    password = request.json["password"]
+    phone_number = request.json["phone_number"]
+    email = request.json["email"]
+    date_of_birth = request.json["date_of_birth"]
+    gender = request.json["gender"]
     user_info = dict(first_name=first_name, last_name=last_name, password=password, phone_number=phone_number,
                      email=email, photo=photo, date_of_birth=date_of_birth, gender=gender)
     users.insert_one(user_info)
@@ -50,19 +49,19 @@ def test():
 
 @app.route('/logged_in', methods=["POST"])
 def logged_in():
-    email = request.form["email"]
+    email = request.json["email"]
     check = users.find_one({"email": email})
     if check:
         return jsonify(message="User Exist")
     else:
-        photo = request.form["photo"]
-        first_name = request.form["first_name"]
-        last_name = request.form["last_name"]
-        password = request.form["password"]
-        phone_number = request.form["phone_number"]
-        email = request.form["email"]
-        date_of_birth = request.form["date_of_birth"]
-        gender = request.form["gender"]
+        photo = request.json["photo"]
+        first_name = request.json["first_name"]
+        last_name = request.json["last_name"]
+        password = request.json["password"]
+        phone_number = request.json["phone_number"]
+        email = request.json["email"]
+        date_of_birth = request.json["date_of_birth"]
+        gender = request.json["gender"]
         user_info = dict(first_name=first_name, last_name=last_name, password=password, phone_number=phone_number,
                          email=email, photo=photo, date_of_birth=date_of_birth, gender=gender)
         users.insert_one(user_info)
@@ -75,8 +74,8 @@ def login():
         email = request.json["email"]
         password = request.json["password"]
     else:
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.json["email"]
+        password = request.json["password"]
 
     check = users.find_one({"email": email, "password": password})
     if check:
