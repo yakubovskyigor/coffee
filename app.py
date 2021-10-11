@@ -1,22 +1,22 @@
-import requests
-from flask import Flask, request, jsonify, redirect, session, url_for
 import pymongo
+import requests
+import os
 from bson.objectid import ObjectId
-import google.oauth2.credentials
-import google_auth_oauthlib.flow
-import googleapiclient.discovery
+from flask import Flask, request, jsonify, redirect, session, url_for, json
+from oauthlib.oauth2 import WebApplicationClient
 
 
 app = Flask(__name__)
-app.secret_key = "testing"
+app.secret_key = "development key"
 client = pymongo.MongoClient(host="localhost", port=27017)
 coffee = client.coffee
 users = coffee.users
-orders = coffee.orders
-CLIENT_SECRETS_FILE = "client_secret.json"
-
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
-API_SERVICE_NAME = 'coffee'
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
+GOOGLE_DISCOVERY_URL = (
+    "https://accounts.google.com/.well-known/openid-configuration"
+)
+client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 
 @app.route('/')
@@ -103,7 +103,7 @@ def order():
             }
     coffee.users.update(
         {"_id": ObjectId(user_id)},
-        {"$push": {'order_data': order_data}}
+        {"$set": {'order_data': order_data}}
     )
     return jsonify("Заказ принят")
 
@@ -111,94 +111,59 @@ def order():
 "GOOGLE регистрация"
 
 
-@app.route('/test_api')
-def test_api_request():
-    if 'credentials' not in session:
-        return redirect('authorize')
-
-    credentials = google.oauth2.credentials.Credentials(
-        **session['credentials'])
-
-    drive = googleapiclient.discovery.build(
-        API_SERVICE_NAME, credentials=credentials)
-
-    files = drive.files().list().execute()
-
-    session['credentials'] = credentials_to_dict(credentials)
-
-    return jsonify(**files)
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 
-@app.route('/authorize')
-def authorize():
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-      CLIENT_SECRETS_FILE, scopes=SCOPES)
+@app.route("/login_google")
+def login_google():
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
 
-    flow.redirect_uri = url_for('oauth2callback', _external=True)
-
-    authorization_url, state = flow.authorization_url(
-      access_type='offline',
-      include_granted_scopes='true')
-
-    session['state'] = state
-
-    return redirect(authorization_url)
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "/callback",
+        scope=["openid", "email", "profile"],
+    )
+    return redirect(request_uri)
 
 
-@app.route('/oauth2callback')
-def oauth2callback(credentials=None):
-    state = session['state']
+@app.route("/login/callback")
+def callback():
+    # Get authorization code Google sent back to you
+    code = request.args.get("code")
 
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-      CLIENT_SECRETS_FILE, scopes=SCOPES, state=state)
-    flow.redirect_uri = url_for('oauth2callback', _external=True)
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
 
-    authorization_response = request.url
-    flow.fetch_token(authorization_response=authorization_response)
+    token_url, headers, body = client.prepare_token_request(
+        token_endpoint,
+        authorization_response=request.url,
+        redirect_url=request.base_url,
+        code=code
+    )
+    token_response = requests.post(
+        token_url,
+        headers=headers,
+        data=body,
+        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    )
 
-    credentials = credentials
-    session['credentials'] = credentials_to_dict(credentials)
+    # Parse the tokens!
+    client.parse_request_body_response(json.dumps(token_response.json()))
 
-    return redirect(url_for('test_api_request'))
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
 
-
-@app.route('/revoke')
-def revoke():
-    if 'credentials' not in session:
-        return ('You need to <a href="/authorize">authorize</a> before ' +
-                'testing the code to revoke credentials.')
-
-    credentials = google.oauth2.credentials.Credentials(
-      **session['credentials'])
-
-    revoke = requests.post('https://oauth2.googleapis.com/revoke',
-                           params={'token': credentials.token},
-                           headers={'content-type': 'application/x-www-form-urlencoded'})
-
-    status_code = getattr(revoke, 'status_code')
-    if status_code == 200:
-        return('Credentials successfully revoked.')
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        picture = userinfo_response.json()["picture"]
+        users_name = userinfo_response.json()["given_name"]
     else:
-        return('An error occurred.')
-
-
-@app.route('/clear')
-def clear_credentials():
-    if 'credentials' in session:
-        del session['credentials']
-    return('Credentials have been cleared.<br><br>')
-
-
-def credentials_to_dict(credentials):
-    return {'token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes}
+        return "User email not available or not verified by Google.", 400
 
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
