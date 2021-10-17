@@ -71,7 +71,7 @@ def logged_in():
         user_info = dict(first_name=first_name, last_name=last_name, password=password, phone_number=phone_number,
                          email=email, photo=photo, date_of_birth=date_of_birth, gender=gender)
         users.insert_one(user_info)
-        return jsonify(message="User added successfully")
+        return jsonify(message="User added successfully"), 200
 
 
 "Авторизация"
@@ -89,6 +89,9 @@ def login():
     check = users.find_one({"email": email, "password": password})
     if check:
         return jsonify(message="You are registered")
+
+
+"""Заказ"""
 
 
 @app.route("/order", methods=['post', 'get', 'put'])
@@ -163,6 +166,15 @@ def callback():
         users_name = userinfo_response.json()["given_name"]
     else:
         return "User email not available or not verified by Google.", 400
+
+
+"""Подсчет количества пользователей"""
+
+
+@app.route("/users_count")
+def users_count():
+    count = coffee.users.count()
+    return jsonify(count)
 
 
 if __name__ == "__main__":

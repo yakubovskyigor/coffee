@@ -14,7 +14,7 @@ class User():
     gender = request.json["gender"]
 
 
-#class Order(User):
+class Order(User):
     photo = User.photo
     first_name = User.first_name
     last_name = User.last_name
@@ -22,8 +22,8 @@ class User():
     email = User.email
 
 
-#@app.route("/OrderItem", methods=["POST"])
-#class OrderItem(Order):
+@app.route("/OrderItem", methods=["POST"])
+class OrderItem(Order):
     type_of_coffee: dict
     price: float
     quantity: int
@@ -40,8 +40,7 @@ class User():
 
 
 
-
-u = User
-o = Order
-oi = OrderItem(("Cappuccino", "Americano", "Latte"), 2, ("1", "2"), 10.5)
-print(oi.get_cost())
+# u = User
+# o = Order
+# oi = OrderItem(("Cappuccino", "Americano", "Latte"), 2, ("1", "2"), 10.5)
+#print(oi.get_cost())
