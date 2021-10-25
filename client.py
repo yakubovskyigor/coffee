@@ -20,7 +20,6 @@ FB_TOKEN_URL = "https://graph.facebook.com/oauth/access_token"
 
 FB_SCOPE = ["email"]
 
-# This allows us to use a plain HTTP callback
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 app = flask.Flask(__name__)
