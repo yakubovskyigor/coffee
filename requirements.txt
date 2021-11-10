@@ -16,7 +16,6 @@ flake8-builtins==1.5.3
 flake8-isort==4.0.0
 Flask==2.0.1
 Flask-JWT-Extended==4.3.1
-Flask-OAuth==0.13
 google-api-core==2.0.1
 google-api-python-client==2.23.0
 google-auth==2.2.1
