@@ -1,13 +1,15 @@
 import pymongo
-import requests
 import os
 from bson.objectid import ObjectId
 from flask import Flask, request, jsonify, redirect, session, url_for, json
 from oauthlib.oauth2 import WebApplicationClient
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 
 
 app = Flask(__name__)
+jwt = JWTManager(app)
 app.secret_key = "development key"
+app.config["JWT_SECRET_KEY"] = "this-is-secret-key"
 client = pymongo.MongoClient(host="localhost", port=27017)
 coffee = client.coffee
 users = coffee.users
@@ -88,7 +90,10 @@ def login():
 
     check = users.find_one({"email": email, "password": password})
     if check:
-        return jsonify(message="You are registered")
+        access_token = create_access_token(identity=email)
+        return jsonify(message="Пользователь с таким именем зарегистрирован", access_token=access_token), 200
+    else:
+        return jsonify(message="Неверный логин или пароль"), 401
 
 
 """Заказ"""
