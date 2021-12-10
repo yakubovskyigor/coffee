@@ -209,7 +209,7 @@ def send_mail():
                   sender='igorby8881@gmail.com', recipients=["igorby@mail.ru"])
     msg.body = "Уважаемый пользователь!"
     mail.send(msg)
-    return jsonify(message="")
+    return jsonify(message="ghhh")
 
 
 """Выход"""
