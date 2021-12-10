@@ -1,17 +1,25 @@
-import pymongo
+from pymongo import MongoClient
 import os
 from bson.objectid import ObjectId
 from flask import Flask, request, jsonify, redirect, session, url_for, json
 from oauthlib.oauth2 import WebApplicationClient
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask_login import logout_user
+from flask_mail import Mail, Message
 
 
 app = Flask(__name__)
 jwt = JWTManager(app)
 app.secret_key = "development key"
 app.config["JWT_SECRET_KEY"] = "this-is-secret-key"
-client = pymongo.MongoClient(host="localhost", port=27017)
-coffee = client.coffee
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USERNAME'] = "igorby8881@gmail.com"
+app.config['MAIL_PASSWORD'] = "i5526678"
+cluster = MongoClient("mongodb+srv://igorby8881:i5526678@cluster0.nxtcm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+coffee = cluster.coffee
 users = coffee.users
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
@@ -19,6 +27,7 @@ GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
+mail = Mail(app)
 
 
 @app.route('/')
@@ -116,61 +125,61 @@ def order():
     return jsonify("Заказ принят")
 
 
-"GOOGLE регистрация"
-
-
-def get_google_provider_cfg():
-    return requests.get(GOOGLE_DISCOVERY_URL).json()
-
-
-@app.route("/login_google")
-def login_google():
-    google_provider_cfg = get_google_provider_cfg()
-    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
-
-    request_uri = client.prepare_request_uri(
-        authorization_endpoint,
-        redirect_uri=request.base_url + "/callback",
-        scope=["openid", "email", "profile"],
-    )
-    return redirect(request_uri)
-
-
-@app.route("/login/callback")
-def callback():
-    # Get authorization code Google sent back to you
-    code = request.args.get("code")
-
-    google_provider_cfg = get_google_provider_cfg()
-    token_endpoint = google_provider_cfg["token_endpoint"]
-
-    token_url, headers, body = client.prepare_token_request(
-        token_endpoint,
-        authorization_response=request.url,
-        redirect_url=request.base_url,
-        code=code
-    )
-    token_response = requests.post(
-        token_url,
-        headers=headers,
-        data=body,
-        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
-    )
-
-    # Parse the tokens!
-    client.parse_request_body_response(json.dumps(token_response.json()))
-
-    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
-    uri, headers, body = client.add_token(userinfo_endpoint)
-    userinfo_response = requests.get(uri, headers=headers, data=body)
-
-    if userinfo_response.json().get("email_verified"):
-        unique_id = userinfo_response.json()["sub"]
-        users_email = userinfo_response.json()["email"]
-        picture = userinfo_response.json()["picture"]
-        users_name = userinfo_response.json()["given_name"]
-    else:
-        return "User email not available or not verified by Google.", 400
+# "GOOGLE регистрация"
+#
+#
+# def get_google_provider_cfg():
+#     return requests.get(GOOGLE_DISCOVERY_URL).json()
+#
+#
+# @app.route("/login_google")
+# def login_google():
+#     google_provider_cfg = get_google_provider_cfg()
+#     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+#
+#     request_uri = client.prepare_request_uri(
+#         authorization_endpoint,
+#         redirect_uri=request.base_url + "/callback",
+#         scope=["openid", "email", "profile"],
+#     )
+#     return redirect(request_uri)
+#
+#
+# @app.route("/login/callback")
+# def callback():
+#     # Get authorization code Google sent back to you
+#     code = request.args.get("code")
+#
+#     google_provider_cfg = get_google_provider_cfg()
+#     token_endpoint = google_provider_cfg["token_endpoint"]
+#
+#     token_url, headers, body = client.prepare_token_request(
+#         token_endpoint,
+#         authorization_response=request.url,
+#         redirect_url=request.base_url,
+#         code=code
+#     )
+#     token_response = requests.post(
+#         token_url,
+#         headers=headers,
+#         data=body,
+#         auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+#     )
+#
+#     # Parse the tokens!
+#     client.parse_request_body_response(json.dumps(token_response.json()))
+#
+#     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+#     uri, headers, body = client.add_token(userinfo_endpoint)
+#     userinfo_response = requests.get(uri, headers=headers, data=body)
+#
+#     if userinfo_response.json().get("email_verified"):
+#         unique_id = userinfo_response.json()["sub"]
+#         users_email = userinfo_response.json()["email"]
+#         picture = userinfo_response.json()["picture"]
+#         users_name = userinfo_response.json()["given_name"]
+#     else:
+#         return "User email not available or not verified by Google.", 400
 
 
 """Подсчет количества пользователей"""
@@ -180,6 +189,36 @@ def callback():
 def users_count():
     count = coffee.users.count()
     return jsonify(count)
+
+
+"""US03-03 Переход по разделам меню"""
+
+
+@app.route("/menu_point", methods=["POST"])
+def menu_point():
+    menu = {
+        "coffee": request.json["coffee"],
+        "hot_drinks": request.json["hot_drinks"]
+    }
+    return jsonify(menu)
+
+
+@app.route("/send", methods=['post', 'get'])
+def send_mail():
+    msg = Message(subject="Смена статуса заказа",
+                  sender='igorby8881@gmail.com', recipients=["igorby@mail.ru"])
+    msg.body = "Уважаемый пользователь!"
+    mail.send(msg)
+    return jsonify(message="")
+
+
+"""Выход"""
+
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
