@@ -203,22 +203,22 @@ def menu_point():
     return jsonify(menu)
 
 
-@app.route("/send", methods=['post', 'get'])
-def send_mail():
-    msg = Message(subject="Смена статуса заказа",
-                  sender='igorby8881@gmail.com', recipients=["igorby@mail.ru"])
-    msg.body = "Уважаемый пользователь!"
-    mail.send(msg)
-    return jsonify(message="ghhh")
-
-
-"""Выход"""
-
-
-@app.route("/logout")
-def logout():
-    logout_user()
-    return redirect(url_for("login"))
+# @app.route("/send", methods=['post', 'get'])
+# def send_mail():
+#     msg = Message(subject="Смена статуса заказа",
+#                   sender='igorby8881@gmail.com', recipients=["igorby@mail.ru"])
+#     msg.body = "Уважаемый пользователь!"
+#     mail.send(msg)
+#     return jsonify(message="ghhh")
+#
+#
+# """Выход"""
+#
+#
+# @app.route("/logout")
+# def logout():
+#     logout_user()
+#     return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
