@@ -6,6 +6,7 @@ from oauthlib.oauth2 import WebApplicationClient
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from flask_login import logout_user
 from flask_mail import Mail, Message
+from flask_cors import CORS
 
 
 app = Flask(__name__)
@@ -28,6 +29,7 @@ GOOGLE_DISCOVERY_URL = (
 )
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 mail = Mail(app)
+CORS(app)
 
 
 @app.route('/')
@@ -64,8 +66,8 @@ def test():
 "Регистрация"
 
 
-@app.route('/logged_in', methods=["POST"])
-def logged_in():
+@app.route('/registration', methods=["POST"])
+def registration():
     email = request.json["email"]
     check = users.find_one({"email": email})
     if check:
