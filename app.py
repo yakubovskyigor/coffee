@@ -75,14 +75,8 @@ def registration():
     else:
         email = request.json["email"]
         password = request.json["password"]
-        photo = request.json["photo"]
-        first_name = request.json["first_name"]
-        last_name = request.json["last_name"]
-        phone_number = request.json["phone_number"]
-        date_of_birth = request.json["date_of_birth"]
-        gender = request.json["gender"]
-        user_info = dict(first_name=first_name, last_name=last_name, password=password, phone_number=phone_number,
-                         email=email, photo=photo, date_of_birth=date_of_birth, gender=gender)
+
+        user_info = dict(password=password, email=email)
         users.insert_one(user_info)
         return jsonify(message="User added successfully"), 200
 
