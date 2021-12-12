@@ -3,7 +3,7 @@ import os
 from bson.objectid import ObjectId
 from flask import Flask, request, jsonify, redirect, session, url_for, json
 from oauthlib.oauth2 import WebApplicationClient
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, create_refresh_token
 from flask_login import logout_user
 from flask_mail import Mail, Message
 from flask_cors import CORS
@@ -76,9 +76,11 @@ def registration():
         email = request.json["email"]
         password = request.json["password"]
 
-        user_info = dict(password=password, email=email)
+        user_info = dict(email=email, password=password)
         users.insert_one(user_info)
-        return jsonify(message="User added successfully"), 200
+        access_token = create_access_token(identity=email)
+        refresh_token = create_refresh_token(identity=email)
+        return jsonify(message="User added successfully", access_token=access_token, refresh_token=refresh_token), 200
 
 
 "Авторизация"
@@ -96,7 +98,8 @@ def login():
     check = users.find_one({"email": email, "password": password})
     if check:
         access_token = create_access_token(identity=email)
-        return jsonify(message="Пользователь с таким именем зарегистрирован", access_token=access_token), 200
+        refresh_token = create_refresh_token(identity=email)
+        return jsonify(message="Пользователь с таким именем зарегистрирован", access_token=access_token, refresh_token=refresh_token), 200
     else:
         return jsonify(message="Неверный логин или пароль"), 401
 
