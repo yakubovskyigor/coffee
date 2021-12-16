@@ -19,7 +19,7 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USERNAME'] = "igorby8881@gmail.com"
 app.config['MAIL_PASSWORD'] = "i5526678"
-cluster = MongoClient("mongodb+srv://igorby8881:i5526678@cluster0.nxtcm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+cluster = MongoClient(host="localhost", port=27017)
 coffee = cluster.coffee
 users = coffee.users
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
@@ -78,9 +78,9 @@ def registration():
 
         user_info = dict(email=email, password=password)
         users.insert_one(user_info)
-        access_token = create_access_token(identity=email)
+        # access_token = create_access_token(identity=email)
         refresh_token = create_refresh_token(identity=email)
-        return jsonify(message="User added successfully", access_token=access_token, refresh_token=refresh_token), 200
+        return jsonify(message="User added successfully", refresh_token=refresh_token, user=email), 200
 
 
 "Авторизация"
