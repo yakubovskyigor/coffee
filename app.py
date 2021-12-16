@@ -78,9 +78,9 @@ def registration():
 
         user_info = dict(email=email, password=password)
         users.insert_one(user_info)
-        # access_token = create_access_token(identity=email)
-        refresh_token = create_refresh_token(identity=email)
-        return jsonify(message="User added successfully", refresh_token=refresh_token, user=email), 200
+        access_token = create_access_token(identity=email)
+        # refresh_token = create_refresh_token(identity=email)
+        return jsonify(message="User added successfully", access_token=access_token, user=email), 200
 
 
 "Авторизация"
