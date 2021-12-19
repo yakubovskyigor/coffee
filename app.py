@@ -19,7 +19,7 @@ app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USERNAME'] = "igorby8881@gmail.com"
 app.config['MAIL_PASSWORD'] = "i5526678"
-cluster = MongoClient(host="localhost", port=27017)
+cluster = MongoClient("mongodb+srv://igorby8881:i5526678@cluster0.nxtcm.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 coffee = cluster.coffee
 users = coffee.users
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
